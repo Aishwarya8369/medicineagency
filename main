@@ -1,0 +1,173 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Scanner;
+
+public class MedicineApp {
+
+    private static final String URL = "jdbc:mysql://localhost:3306/medicineagency";
+    private static final String USER = "root";
+    private static final String PASSWORD = "your_password"; // ← replace with your MySQL password
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("\n--- Medicine Management ---");
+            System.out.println("1. Add Medicine");
+            System.out.println("2. Delete Medicine");
+            System.out.println("3. Update Medicine");
+            System.out.println("0. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+                switch (choice) {
+                    case 1:
+                        System.out.print("Enter name: ");
+                        String name = sc.nextLine();
+                        System.out.print("Enter company: ");
+                        String company = sc.nextLine();
+                        System.out.print("Enter quantity: ");
+                        int quantity = sc.nextInt();
+                        System.out.print("Enter price: ");
+                        double price = sc.nextDouble();
+
+                        String addSQL = "INSERT INTO medicines (name, company, quantity, price) VALUES (?, ?, ?, ?)";
+                        try (PreparedStatement stmt = conn.prepareStatement(addSQL)) {
+                            stmt.setString(1, name);
+                            stmt.setString(2, company);
+                            stmt.setInt(3, quantity);
+                            stmt.setDouble(4, price);
+                            stmt.executeUpdate();
+                            System.out.println(" Medicine added.");
+                        }
+                        break;
+
+                    case 2:
+                        System.out.print("Enter medicine ID to delete: ");
+                        int delId = sc.nextInt();
+                        String delSQL = "DELETE FROM medicines WHERE id = ?";
+                        try (PreparedStatement stmt = conn.prepareStatement(delSQL)) {
+                            stmt.setInt(1, delId);
+                            int rows = stmt.executeUpdate();
+                            if (rows > 0)
+                                System.out.println(" Medicine deleted.");
+                            else
+                                System.out.println(" Medicine not found.");
+                        }
+                        break;
+
+                    case 3:
+                        System.out.print("Enter medicine ID to update: ");
+                        int updId = sc.nextInt();
+                        sc.nextLine();
+
+                        System.out.println("What do you want to update?");
+                        System.out.println("1. Name");
+                        System.out.println("2. Company");
+                        System.out.println("3. Quantity");
+                        System.out.println("4. Price");
+                        System.out.println("5. All fields");
+                        System.out.print("Enter your option: ");
+                        int updChoice = sc.nextInt();
+                        sc.nextLine();
+
+                        switch (updChoice) {
+                            case 1:
+                                System.out.print("Enter new name: ");
+                                String newName = sc.nextLine();
+                                try (PreparedStatement stmt = conn.prepareStatement(
+                                        "UPDATE medicines SET name = ? WHERE id = ?")) {
+                                    stmt.setString(1, newName);
+                                    stmt.setInt(2, updId);
+                                    updateAndPrintResult(stmt);
+                                }
+                                break;
+
+                            case 2:
+                                System.out.print("Enter new company: ");
+                                String newCompany = sc.nextLine();
+                                try (PreparedStatement stmt = conn.prepareStatement(
+                                        "UPDATE medicines SET company = ? WHERE id = ?")) {
+                                    stmt.setString(1, newCompany);
+                                    stmt.setInt(2, updId);
+                                    updateAndPrintResult(stmt);
+                                }
+                                break;
+
+                            case 3:
+                                System.out.print("Enter new quantity: ");
+                                int newQty = sc.nextInt();
+                                try (PreparedStatement stmt = conn.prepareStatement(
+                                        "UPDATE medicines SET quantity = ? WHERE id = ?")) {
+                                    stmt.setInt(1, newQty);
+                                    stmt.setInt(2, updId);
+                                    updateAndPrintResult(stmt);
+                                }
+                                break;
+
+                            case 4:
+                                System.out.print("Enter new price: ");
+                                double newPrice = sc.nextDouble();
+                                try (PreparedStatement stmt = conn.prepareStatement(
+                                        "UPDATE medicines SET price = ? WHERE id = ?")) {
+                                    stmt.setDouble(1, newPrice);
+                                    stmt.setInt(2, updId);
+                                    updateAndPrintResult(stmt);
+                                }
+                                break;
+
+                            case 5:
+                                System.out.print("Enter new name: ");
+                                String allName = sc.nextLine();
+                                System.out.print("Enter new company: ");
+                                String allCompany = sc.nextLine();
+                                System.out.print("Enter new quantity: ");
+                                int allQty = sc.nextInt();
+                                System.out.print("Enter new price: ");
+                                double allPrice = sc.nextDouble();
+                                try (PreparedStatement stmt = conn.prepareStatement(
+                                        "UPDATE medicines SET name = ?, company = ?, quantity = ?, price = ? WHERE id = ?")) {
+                                    stmt.setString(1, allName);
+                                    stmt.setString(2, allCompany);
+                                    stmt.setInt(3, allQty);
+                                    stmt.setDouble(4, allPrice);
+                                    stmt.setInt(5, updId);
+                                    updateAndPrintResult(stmt);
+                                }
+                                break;
+
+                            default:
+                                System.out.println("Invalid update choice.");
+                        }
+                        break;
+
+                    case 0:
+                        System.out.println("Exiting...");
+                        break;
+
+                    default:
+                        System.out.println("Invalid choice!");
+                }
+            } catch (SQLException e) {
+                System.out.println(" SQL Error: " + e.getMessage());
+            }
+
+        } while (choice != 0);
+
+        sc.close();
+    }
+
+    // Helper method
+    private static void updateAndPrintResult(PreparedStatement stmt) throws SQLException {
+        int rows = stmt.executeUpdate();
+        if (rows > 0)
+            System.out.println(" Medicine updated.");
+        else
+            System.out.println(" Medicine not found.");
+    }
+}
